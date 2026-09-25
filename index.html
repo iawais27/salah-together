@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Salah Together">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="theme-color" content="#f7f5f0">
+<title>Salah Together</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --card:#ffffff; --text:#2b2a27; --muted:#7d7a73; --line:#ebe7de;
+  --green:#5b9a74; --green-soft:#e6f1ea; --empty:#efece6; --accent:#6b8fa8; --accent-soft:#e8eff4;
+  --danger:#b86b62; --shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#161816; --card:#1f221f; --text:#ecebe7; --muted:#9a9a93; --line:#2d312d;
+  --green:#79b891; --green-soft:#23372a; --empty:#2a2d2a; --accent:#8fb0c7; --accent-soft:#223039;
+  --danger:#d68c83; --shadow:none;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#161816; --card:#1f221f; --text:#ecebe7; --muted:#9a9a93; --line:#2d312d;
+    --green:#79b891; --green-soft:#23372a; --empty:#2a2d2a; --accent:#8fb0c7; --accent-soft:#223039;
+    --danger:#d68c83; --shadow:none;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.45;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);min-height:100vh}
+.wrap{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+.hidden{display:none!important}
+h1{font-size:22px;margin:0;font-weight:650;letter-spacing:-.2px}
+h2{font-size:18px;margin:0 0 12px;font-weight:600}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.brand{display:flex;align-items:center;gap:8px}
+.iconbtn{background:var(--card);border:1px solid var(--line);color:var(--text);width:44px;height:44px;border-radius:14px;font-size:20px;cursor:pointer}
+label{display:block;font-size:14px;color:var(--muted);margin:12px 0 6px}
+input,select{width:100%;font-size:16px;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:14px;background:var(--green);color:#fff}
+.btn.secondary{background:var(--accent-soft);color:var(--text)}
+.btn.ghost{background:transparent;color:var(--accent);font-weight:500;margin-top:6px}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn:disabled{opacity:.55;cursor:default}
+.msg{margin-top:12px;font-size:14px;padding:10px 12px;border-radius:12px;background:var(--accent-soft)}
+.msg.err{background:#f6e6e3;color:#7a3b33}
+:root[data-theme="dark"] .msg.err{background:#3a2522;color:#f0c4be}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .msg.err{background:#3a2522;color:#f0c4be}}
+.code{font-size:34px;letter-spacing:8px;font-weight:700;text-align:center;padding:14px;border-radius:14px;background:var(--green-soft);margin-top:12px;user-select:all}
+.center{text-align:center}
+
+/* Home */
+.datebox{margin-bottom:12px}
+.datebox .day{font-size:15px;color:var(--muted)}
+.datebox .date{font-size:20px;font-weight:600}
+.ptime{font-size:14px;color:var(--muted);margin-top:4px}
+.seg{display:flex;background:var(--empty);border-radius:12px;padding:3px;margin:10px 0 14px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:10px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:0 4px 6px}
+.prayer{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+.prayer .name{font-weight:600;font-size:17px;margin:0 0 8px 4px;display:flex;justify-content:space-between;align-items:center}
+.both{font-size:13px;font-weight:500;color:var(--green);animation:fade .4s ease}
+.boxes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{min-height:56px;border-radius:14px;border:1.5px dashed var(--line);background:var(--empty);color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:500;width:100%}
+button.box{cursor:pointer;font-family:inherit}
+.box.done{border:1.5px solid transparent;background:var(--green-soft);color:var(--text)}
+.box.done .tick{animation:pop .35s ease}
+.box.partner{cursor:default}
+.box.notstarted{border-style:dotted;opacity:.6;font-size:14px}
+.remind{margin-top:8px;width:100%;border:0;background:var(--accent-soft);color:var(--text);border-radius:12px;padding:10px;font-size:14px;font-weight:500;cursor:pointer}
+.remind:disabled{opacity:.7;cursor:default}
+.slot{display:flex;flex-direction:column}
+.progress{text-align:center;margin-top:14px;color:var(--muted);font-size:15px}
+.progress b{color:var(--text)}
+.note{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes slide{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+
+/* Reminder banner */
+.inbox{background:var(--green-soft);border-radius:16px;padding:12px 14px;margin-bottom:12px;animation:slide .35s ease}
+.inbox .item{padding:4px 0}
+.inbox .item q{display:block;color:var(--muted);font-size:14px;quotes:"“" "”"}
+.inbox button{margin-top:8px;border:0;background:var(--card);color:var(--text);padding:8px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+
+/* Sheet */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:20;animation:fade .2s}
+.sheet{background:var(--card);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;animation:slide .25s}
+.chip{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:12px;padding:13px 14px;font-size:16px;margin-top:8px;cursor:pointer}
+.chip.on{border-color:var(--green);background:var(--green-soft)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+
+.toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:14px;font-size:15px;z-index:30;max-width:90vw;animation:slide .3s}
+.spinner{margin:80px auto;width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="loading"><div class="spinner" aria-label="Loading"></div></div>
+
+  <!-- AUTH -->
+  <section id="auth" class="hidden">
+    <div class="center" style="margin:36px 0 22px">
+      <div style="font-size:40px">🌙</div>
+      <h1>Salah Together</h1>
+      <p class="muted" style="margin:6px 0 0">Pray together, remind each other 🤍</p>
+    </div>
+    <div class="card">
+      <div class="seg" role="tablist">
+        <button id="tabIn" class="on" type="button">Log in</button>
+        <button id="tabUp" type="button">Sign up</button>
+      </div>
+      <form id="authForm" novalidate>
+        <div id="nameWrap" class="hidden">
+          <label for="aName">Your name</label>
+          <input id="aName" maxlength="40" autocomplete="given-name" placeholder="e.g. Khalifa">
+        </div>
+        <label for="aEmail">Email</label>
+        <input id="aEmail" type="email" autocomplete="email" inputmode="email" autocapitalize="off">
+        <label for="aPass">Password</label>
+        <input id="aPass" type="password" autocomplete="current-password" minlength="6">
+        <button class="btn" id="authBtn" type="submit">Log in</button>
+      </form>
+      <button class="btn ghost" id="forgotBtn" type="button">Forgot password?</button>
+      <div id="authMsg" class="msg hidden"></div>
+    </div>
+  </section>
+
+  <!-- NEW PASSWORD (after reset link) -->
+  <section id="recover" class="hidden">
+    <div class="card" style="margin-top:40px">
+      <h2>Choose a new password</h2>
+      <label for="newPass">New password</label>
+      <input id="newPass" type="password" autocomplete="new-password" minlength="6">
+      <button class="btn" id="newPassBtn" type="button">Save password</button>
+      <div id="recoverMsg" class="msg hidden"></div>
+    </div>
+  </section>
+
+  <!-- PAIRING -->
+  <section id="pairing" class="hidden">
+    <div class="topbar">
+      <div class="brand"><span style="font-size:22px">🌙</span><h1>Salah Together</h1></div>
+      <button class="iconbtn" id="pairSettingsBtn" aria-label="Settings">⚙️</button>
+    </div>
+    <div class="card center">
+      <div style="font-size:34px">🤍</div>
+      <h2 style="margin-top:6px">Your prayer partner isn't connected yet.</h2>
+      <p class="muted small" style="margin:0">One of you creates a code, the other joins with it. You only do this once.</p>
+      <button class="btn" id="createPairBtn" type="button">Create a pair</button>
+      <div id="codeBox" class="hidden">
+        <div class="code" id="codeText"></div>
+        <p class="muted small">Send this code to your partner. It works once and expires in 24 hours.<br>This screen will change by itself when they join.</p>
+        <button class="btn secondary" id="shareCodeBtn" type="button">Share code</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Join a pair</h2>
+      <label for="joinCode">Code from your partner</label>
+      <input id="joinCode" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="e.g. 7CHFSV" style="text-transform:uppercase;letter-spacing:4px;font-weight:600">
+      <button class="btn" id="joinBtn" type="button">Join</button>
+    </div>
+    <div id="pairMsg" class="msg hidden"></div>
+  </section>
+
+  <!-- HOME -->
+  <section id="home" class="hidden">
+    <div class="topbar">
+      <div class="brand"><span style="font-size:22px">🌙</span><h1>Salah Together</h1></div>
+      <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙️</button>
+    </div>
+
+    <div id="inbox" class="inbox hidden" role="status" aria-live="polite"></div>
+
+    <div id="notifNudge" class="card hidden">
+      <b>🔔 Get reminders on your lock screen</b>
+      <p class="small muted" id="nudgeText" style="margin:6px 0 0"></p>
+      <button class="btn" id="nudgeBtn" type="button">Turn on notifications</button>
+      <button class="btn ghost" id="nudgeLater" type="button">Not now</button>
+    </div>
+
+    <div class="datebox">
+      <div class="day" id="dDay"></div>
+      <div class="date" id="dDate"></div>
+      <div class="ptime" id="pTime"></div>
+    </div>
+
+    <div class="seg" role="tablist" aria-label="Which day">
+      <button id="segToday" class="on" type="button">Today</button>
+      <button id="segYest" type="button">Yesterday</button>
+    </div>
+
+    <div class="cols"><div id="colMe">You</div><div id="colPartner">Partner</div></div>
+    <div id="prayerList"></div>
+
+    <div class="progress" id="progress"></div>
+    <div class="note" id="dayNote"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="hidden">
+    <div class="topbar">
+      <button class="iconbtn" id="backBtn" aria-label="Back">‹</button>
+      <h1>Settings</h1>
+      <div style="width:44px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Account</h2>
+      <label for="sName">Name</label>
+      <input id="sName" maxlength="40">
+      <label for="sTz">Time zone</label>
+      <select id="sTz"></select>
+      <button class="btn ghost" id="useDeviceTz" type="button">Use this phone's time zone</button>
+      <button class="btn" id="saveProfileBtn" type="button">Save</button>
+      <div class="muted small" style="margin-top:12px" id="sEmail"></div>
+    </div>
+
+    <div class="card" id="partnerCard">
+      <h2>Partner</h2>
+      <div class="row"><span>🤍 <b id="spName"></b></span></div>
+      <div class="row"><span class="muted">Connected since</span><span id="spSince"></span></div>
+      <button class="btn danger" id="unpairBtn" type="button">Unpair</button>
+    </div>
+
+    <div class="card">
+      <h2>Notifications</h2>
+      <p class="small muted" id="notifText" style="margin:0">Checking…</p>
+      <button class="btn hidden" id="notifOnBtn" type="button">Turn on notifications 🔔</button>
+      <button class="btn secondary hidden" id="notifTestBtn" type="button">Send a test notification</button>
+      <button class="btn ghost hidden" id="notifOffBtn" type="button">Turn off on this phone</button>
+    </div>
+
+    <div class="card">
+      <h2>Appearance</h2>
+      <div class="seg" id="themeSeg">
+        <button data-theme="light" type="button">Light</button>
+        <button data-theme="dark" type="button">Dark</button>
+        <button data-theme="system" type="button">System</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn secondary" id="logoutBtn" type="button" style="margin-top:0">Log out</button>
+      <button class="btn danger" id="deleteBtn" type="button">Delete my account</button>
+    </div>
+    <div id="settingsMsg" class="msg hidden"></div>
+  </section>
+</div>
+
+<div id="sheetHost"></div>
+<div id="toastHost"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const SUPABASE_URL = 'https://fvqwflclgbgkirsybltx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cMneHuKF8DT0xU4cX9Ls9w_Yegmc00_';
+
+const PRAYERS = [
+  {id:'fajr', name:'Fajr'}, {id:'dhuhr', name:'Dhuhr'}, {id:'asr', name:'Asr'},
+  {id:'maghrib', name:'Maghrib'}, {id:'isha', name:'Isha'}
+];
+const PRAYER_NAME = Object.fromEntries(PRAYERS.map(p => [p.id, p.name]));
+
+const ERRORS = {
+  own_code: "That's your own code. Send it to your partner so they can join.",
+  invalid_code: "That code didn't work. Please check it and try again.",
+  expired_code: "That code has expired. Ask your partner to create a new one.",
+  already_paired: "You're already connected with a partner.",
+  not_paired: "Your partner isn't connected yet.",
+  already_ticked: "They've already ticked this prayer 🤍",
+  cooldown: "Reminder already sent 🤍 You can send another a bit later.",
+  day_locked: "Only today and yesterday can be changed.",
+  bad_name: "Please enter a name (up to 40 letters).",
+  bad_timezone: "Please choose a time zone from the list.",
+  bad_message: "Please write a short message (up to 100 letters).",
+  bad_subscription: "This phone couldn't be set up for notifications. Please try again.",
+};
+function friendly(err){
+  const m = (err && (err.message || err.error_description || String(err))) || '';
+  for (const k in ERRORS) if (m.includes(k)) return ERRORS[k];
+  if (/Invalid login credentials/i.test(m)) return "Email or password is incorrect.";
+  if (/already registered|already been registered/i.test(m)) return "An account with this email already exists. Try logging in.";
+  if (/Password should be at least/i.test(m)) return "Password must be at least 6 characters.";
+  if (/valid email|invalid format|Unable to validate email/i.test(m)) return "Please enter a valid email address.";
+  if (/rate limit|too many/i.test(m)) return "Too many tries. Please wait a few minutes and try again.";
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return "You seem to be offline. Please check your internet.";
+  console.error(err);
+  return "Something went wrong. Please try again.";
+}
+
+/* ============ STATE ============ */
+let sb = null;
+const S = {
+  session:null, me:null, partner:null, pair:null,
+  view:'today',               // 'today' | 'yesterday'
+  prayers:{},                 // key "userId|day|prayer" -> true/false
+  sentReminders:[],           // reminders I sent recently
+  inbox:[],                   // unseen reminders to me
+  cooldownMs: 60*60*1000,
+  channel:null, screen:null, reloadTimer:null, clockTimer:null, busy:new Set(),
+};
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function show(id){
+  ['loading','auth','recover','pairing','home','settings'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  S.screen = id; window.scrollTo(0,0);
+}
+function msg(id, text, isErr){
+  const el = $(id); if (!text){ el.classList.add('hidden'); return; }
+  el.textContent = text; el.classList.toggle('err', !!isErr); el.classList.remove('hidden');
+}
+function toast(text, ms=3200){
+  const t = document.createElement('div'); t.className='toast'; t.textContent=text; t.setAttribute('role','status');
+  $('toastHost').innerHTML=''; $('toastHost').appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+function deviceTz(){ try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch(e){ return 'UTC'; } }
+function dateIn(tz, d=new Date()){
+  try { return new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(d); }
+  catch(e){ return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d); }
+}
+function minusDay(ymd){
+  const [y,m,d] = ymd.split('-').map(Number);
+  const t = new Date(Date.UTC(y,m-1,d)); t.setUTCDate(t.getUTCDate()-1);
+  return t.toISOString().slice(0,10);
+}
+function prettyDate(ymd){
+  const [y,m,d] = ymd.split('-').map(Number);
+  const t = new Date(Date.UTC(y,m-1,d,12));
+  return {
+    day: t.toLocaleDateString('en-GB',{weekday:'long', timeZone:'UTC'}),
+    date: t.toLocaleDateString('en-GB',{day:'numeric', month:'long', year:'numeric', timeZone:'UTC'})
+  };
+}
+function timeIn(tz){
+  try { return new Date().toLocaleTimeString('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit'}); }
+  catch(e){ return ''; }
+}
+function parseInterval(v){
+  // "01:00:00" or "1 hour" -> ms
+  if (typeof v !== 'string') return null;
+  const m = v.match(/^(\d+):(\d{2}):(\d{2})/);
+  if (m) return ((+m[1])*3600 + (+m[2])*60 + (+m[3]))*1000;
+  const h = v.match(/(\d+)\s*hour/); const mi = v.match(/(\d+)\s*min/);
+  if (h || mi) return ((h?+h[1]:0)*3600 + (mi?+mi[1]:0)*60)*1000;
+  return null;
+}
+const firstName = n => ((n || '').trim().split(/\s+/)[0] || '').replace(/[.,!?;:]+$/, '') || 'Partner';
+function dayMonth(ymd){ const [y,m,d] = ymd.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,12)).toLocaleDateString('en-GB',{day:'numeric', month:'long', timeZone:'UTC'}); }
+function shortDay(ymd){ const [y,m,d] = ymd.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,12)).toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short', timeZone:'UTC'}); }
+const key = (u,d,p) => `${u}|${d}|${p}`;
+function myDays(){ const t = dateIn(S.me.timezone); return {today:t, yesterday:minusDay(t)}; }
+function partnerDays(){ if(!S.partner) return null; const t = dateIn(S.partner.timezone); return {today:t, yesterday:minusDay(t)}; }
+
+/* ============ THEME ============ */
+function getTheme(){ try { return localStorage.getItem('theme') || 'system'; } catch(e){ return 'system'; } }
+function applyTheme(t){
+  if (t === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === t));
+  const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#161816' : '#f7f5f0');
+}
+applyTheme(getTheme());
+
+/* ============ AUTH ============ */
+let signUpMode = false;
+function setAuthMode(up){
+  signUpMode = up;
+  $('tabIn').classList.toggle('on', !up); $('tabUp').classList.toggle('on', up);
+  $('nameWrap').classList.toggle('hidden', !up);
+  $('authBtn').textContent = up ? 'Create account' : 'Log in';
+  $('aPass').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
+  $('forgotBtn').classList.toggle('hidden', up);
+  msg('authMsg','');
+}
+$('tabIn').onclick = () => setAuthMode(false);
+$('tabUp').onclick = () => setAuthMode(true);
+
+$('authForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $('aEmail').value.trim(), password = $('aPass').value, name = $('aName').value.trim();
+  if (signUpMode && !name) return msg('authMsg', 'Please enter your name.', true);
+  if (!email) return msg('authMsg', 'Please enter your email.', true);
+  if (password.length < 6) return msg('authMsg', 'Password must be at least 6 characters.', true);
+  $('authBtn').disabled = true; msg('authMsg','');
+  try {
+    if (signUpMode){
+      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ name, timezone: deviceTz() } } });
+      if (error) throw error;
+      if (!data.session) msg('authMsg', 'Account created. Please log in.');
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch(err){ msg('authMsg', friendly(err), true); }
+  $('authBtn').disabled = false;
+};
+
+$('forgotBtn').onclick = async () => {
+  const email = $('aEmail').value.trim();
+  if (!email) return msg('authMsg', 'Type your email above first, then tap "Forgot password?" again.', true);
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    if (error) throw error;
+    msg('authMsg', 'If that email has an account, a reset link is on its way. Check your inbox (and spam).');
+  } catch(err){ msg('authMsg', friendly(err), true); }
+};
+
+$('newPassBtn').onclick = async () => {
+  const p = $('newPass').value;
+  if (p.length < 6) return msg('recoverMsg', 'Password must be at least 6 characters.', true);
+  $('newPassBtn').disabled = true;
+  try {
+    const { error } = await sb.auth.updateUser({ password: p });
+    if (error) throw error;
+    history.replaceState(null, '', location.pathname);
+    toast('Password updated 🤍');
+    S.screen = null;
+    await boot();
+  } catch(err){ msg('recoverMsg', friendly(err), true); }
+  $('newPassBtn').disabled = false;
+};
+
+/* ============ LOADING DATA ============ */
+async function loadAll(){
+  const uid = S.session.user.id;
+  const [{ data: profiles, error: e1 }, { data: pairs, error: e2 }] = await Promise.all([
+    sb.from('profiles').select('id,name,timezone,created_at'),
+    sb.from('pairs').select('*'),
+  ]);
+  if (e1) throw e1; if (e2) throw e2;
+  S.me = (profiles || []).find(p => p.id === uid);
+  if (!S.me) throw new Error('profile_missing');
+  S.pair = (pairs || [])[0] || null;
+  const partnerId = S.pair && S.pair.user_b ? (S.pair.user_a === uid ? S.pair.user_b : S.pair.user_a) : null;
+  S.partner = partnerId ? (profiles || []).find(p => p.id === partnerId) || null : null;
+
+  const days = new Set(Object.values(myDays()));
+  if (S.partner) Object.values(partnerDays()).forEach(d => days.add(d));
+  const since = new Date(Date.now() - S.cooldownMs - 60000).toISOString();
+
+  const [pr, sent, inbox] = await Promise.all([
+    sb.from('prayers').select('user_id,day,prayer,done').in('day', [...days]),
+    sb.from('reminders').select('prayer,day,created_at,to_user').eq('from_user', uid).gte('created_at', since),
+    sb.from('reminders').select('id,prayer,message,created_at,from_user').eq('to_user', uid).is('seen_at', null).order('created_at',{ascending:true}),
+  ]);
+  if (pr.error) throw pr.error; if (sent.error) throw sent.error; if (inbox.error) throw inbox.error;
+
+  S.prayers = {};
+  for (const r of pr.data) S.prayers[key(r.user_id, r.day, r.prayer)] = r.done;
+  S.sentReminders = sent.data;
+  S.inbox = inbox.data;
+}
+
+async function refresh(){
+  if (!S.session) return;
+  try {
+    await loadAll();
+    route();
+  } catch(err){
+    if (String(err && err.message).includes('profile_missing')){ toast("We couldn't find your profile. Please sign up again."); await sb.auth.signOut(); return; }
+    toast(friendly(err));
+  }
+}
+function scheduleRefresh(){ clearTimeout(S.reloadTimer); S.reloadTimer = setTimeout(refresh, 250); }
+
+function route(){
+  if (S.screen === 'settings'){ renderSettings(); return; }
+  if (S.screen === 'recover') return;
+  if (!S.partner){ renderPairing(); show('pairing'); }
+  else { renderHome(); show('home'); updateNotifUI(); }
+}
+
+/* ============ LIVE UPDATES ============ */
+function subscribe(){
+  if (S.channel) sb.removeChannel(S.channel);
+  const uid = S.session.user.id;
+  S.channel = sb.channel('salah-' + uid)
+    .on('postgres_changes', { event:'*', schema:'public', table:'prayers' }, scheduleRefresh)
+    .on('postgres_changes', { event:'*', schema:'public', table:'pairs' }, scheduleRefresh)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'profiles' }, scheduleRefresh)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'reminders', filter:'to_user=eq.' + uid }, (p) => {
+      const r = p.new || {};
+      if (S.partner && r.from_user === S.partner.id){
+        toast(`🤍 ${firstName(S.partner.name)} reminded you about ${PRAYER_NAME[r.prayer] || 'a prayer'}`, 4500);
+        try { navigator.vibrate && navigator.vibrate(120); } catch(e){}
+      }
+      scheduleRefresh();
+    })
+    .subscribe();
+}
+
+/* ============ PAIRING ============ */
+function renderPairing(){
+  const waiting = S.pair && !S.pair.user_b && S.pair.code && new Date(S.pair.code_expires_at) > new Date();
+  $('codeBox').classList.toggle('hidden', !waiting);
+  if (waiting) $('codeText').textContent = S.pair.code;
+  $('createPairBtn').textContent = waiting ? 'Make a new code' : 'Create a pair';
+}
+$('createPairBtn').onclick = async () => {
+  $('createPairBtn').disabled = true; msg('pairMsg','');
+  try {
+    const { error } = await sb.rpc('create_pair');
+    if (error) throw error;
+    await refresh();
+  } catch(err){ msg('pairMsg', friendly(err), true); }
+  $('createPairBtn').disabled = false;
+};
+$('shareCodeBtn').onclick = async () => {
+  const code = $('codeText').textContent;
+  const text = `Join me on Salah Together 🤍\nMy code: ${code}\n${location.origin + location.pathname}`;
+  try {
+    if (navigator.share) await navigator.share({ text });
+    else { await navigator.clipboard.writeText(text); toast('Copied 🤍'); }
+  } catch(e){ /* user closed the share sheet */ }
+};
+$('joinCode').oninput = e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); };
+$('joinBtn').onclick = async () => {
+  const code = $('joinCode').value.trim();
+  if (code.length !== 6) return msg('pairMsg', 'The code has 6 characters.', true);
+  $('joinBtn').disabled = true; msg('pairMsg','');
+  try {
+    const { error } = await sb.rpc('join_pair', { p_code: code });
+    if (error) throw error;
+    $('joinCode').value = '';
+    toast('Connected 🤍');
+    await refresh();
+  } catch(err){ msg('pairMsg', friendly(err), true); }
+  $('joinBtn').disabled = false;
+};
+$('pairSettingsBtn').onclick = () => openSettings();
+
+/* ============ HOME ============ */
+function lastSent(prayer, day){
+  let best = null;
+  for (const r of S.sentReminders){
+    if (r.prayer === prayer && r.day === day && (!best || r.created_at > best)) best = r.created_at;
+  }
+  return best ? new Date(best).getTime() : 0;
+}
+
+function renderHome(){
+  const me = S.me, pa = S.partner;
+  const md = myDays(), pd = partnerDays();
+  const isToday = S.view === 'today';
+  const myDay = isToday ? md.today : md.yesterday;
+  // Both columns always show the SAME calendar date.
+  const paDay = myDay;
+  const notStarted = paDay > pd.today;       // partner is behind: this date hasn't begun for them
+  const canRemind = paDay === pd.today;       // reminders only for the partner's current day
+  const pName = firstName(pa.name);
+
+  const pdisp = prettyDate(myDay);
+  $('dDay').textContent = isToday ? pdisp.day : 'Yesterday · ' + pdisp.day;
+  $('dDate').textContent = pdisp.date;
+  $('pTime').textContent = `${pName}'s time: ${timeIn(pa.timezone)}` + (pd.today !== md.today ? ` · ${prettyDate(pd.today).day} ${dayMonth(pd.today)} there` : '');
+  $('segToday').classList.toggle('on', isToday);
+  $('segYest').classList.toggle('on', !isToday);
+  $('colMe').textContent = 'You';
+  $('colPartner').textContent = pName;
+
+  let mine = 0, theirs = 0;
+  const now = Date.now();
+  const html = PRAYERS.map(p => {
+    const myDone = !!S.prayers[key(me.id, myDay, p.id)];
+    const paDone = !!S.prayers[key(pa.id, paDay, p.id)];
+    if (myDone) mine++; if (paDone) theirs++;
+
+    let remind = '';
+    if (canRemind && !paDone){
+      const until = lastSent(p.id, paDay) + S.cooldownMs;
+      remind = until > now
+        ? `<button class="remind" disabled>Reminder sent 🤍</button>`
+        : `<button class="remind" data-remind="${p.id}">Remind ${esc(pName)} 🤍</button>`;
+    }
+    return `<div class="prayer">
+      <div class="name"><span>${p.name}</span>${myDone && paDone ? '<span class="both">🤍 Both prayed</span>' : ''}</div>
+      <div class="boxes">
+        <div class="slot">
+          <button class="box ${myDone ? 'done' : ''}" data-tick="${p.id}" aria-pressed="${myDone}"
+            aria-label="${p.name}, you: ${myDone ? 'prayed. Tap to untick' : 'not ticked. Tap to tick'}">
+            ${myDone ? '<span class="tick">✅</span> Prayed' : 'Tap to tick'}
+          </button>
+        </div>
+        <div class="slot">
+          <div class="box partner ${paDone ? 'done' : ''} ${notStarted && !paDone ? 'notstarted' : ''}" role="img" aria-label="${p.name}, ${esc(pName)}: ${paDone ? 'prayed' : (notStarted ? 'day not started yet' : 'not ticked yet')}">
+            ${paDone ? '<span class="tick">✅</span> Prayed' : (notStarted ? 'Day not started' : 'Not yet')}
+          </div>
+          ${remind}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  $('prayerList').innerHTML = html;
+
+  $('progress').innerHTML = `${isToday ? 'Today' : 'Yesterday'}: <b>You ${mine}/5</b> · <b>${esc(pName)} ${theirs}/5</b>`;
+  let note;
+  if (notStarted) note = `${pName}'s ${dayMonth(paDay)} hasn't started yet (it's still ${prettyDate(pd.today).day} there). To remind ${pName}, open Yesterday 🤍`;
+  else if (!canRemind && isToday) note = `${pName}'s new day has started. You can remind ${pName} again after your midnight 🤍`;
+  else if (!isToday) note = 'You can still tick yesterday, for example an Isha prayed after midnight.';
+  else note = mine === 5 ? 'Alhamdulillah 🤍' : 'Keep going 🤍';
+  $('dayNote').textContent = note;
+
+  renderInbox();
+}
+
+function renderInbox(){
+  const box = $('inbox');
+  if (!S.inbox.length || !S.partner){ box.classList.add('hidden'); return; }
+  const pName = firstName(S.partner.name);
+  box.innerHTML = S.inbox.slice(-5).map(r =>
+    `<div class="item">🤍 <b>${esc(pName)}</b> reminded you about <b>${esc(PRAYER_NAME[r.prayer])}</b><q>${esc(r.message)}</q></div>`
+  ).join('') + `<button id="inboxOk" type="button">OK 🤍</button>`;
+  box.classList.remove('hidden');
+  $('inboxOk').onclick = async () => {
+    box.classList.add('hidden'); S.inbox = [];
+    try { await sb.rpc('mark_reminders_seen'); } catch(e){}
+  };
+}
+
+$('segToday').onclick = () => { S.view = 'today'; renderHome(); };
+$('segYest').onclick = () => { S.view = 'yesterday'; renderHome(); };
+
+$('prayerList').onclick = async (e) => {
+  const t = e.target.closest('[data-tick]');
+  if (t) return toggleTick(t.dataset.tick);
+  const r = e.target.closest('[data-remind]');
+  if (r) return openReminder(r.dataset.remind);
+};
+
+async function toggleTick(prayer){
+  const md = myDays();
+  const day = S.view === 'today' ? md.today : md.yesterday;
+  const k = key(S.me.id, day, prayer);
+  if (S.busy.has(k)) return;
+  const next = !S.prayers[k];
+  S.prayers[k] = next; S.busy.add(k); renderHome();
+  try { navigator.vibrate && navigator.vibrate(15); } catch(e){}
+  try {
+    const { error } = await sb.rpc('set_prayer', { p_day: day, p_prayer: prayer, p_done: next });
+    if (error) throw error;
+  } catch(err){
+    S.prayers[k] = !next; renderHome(); toast(friendly(err));
+  } finally { S.busy.delete(k); }
+}
+
+/* ============ REMINDER SHEET ============ */
+function openReminder(prayer){
+  const pName = firstName(S.partner.name), pn = PRAYER_NAME[prayer];
+  const options = [`Don't forget ${pn} 🤍`, 'Time to pray 🤲', "Let's pray together 🤍", `${pn} time 🤍`];
+  let chosen = options[0];
+  const host = $('sheetHost');
+  host.innerHTML = `<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" aria-label="Send a reminder">
+    <h2>Remind ${esc(pName)} about ${pn}</h2>
+    <div id="opts">${options.map((o,i) => `<button class="chip ${i===0?'on':''}" data-opt="${i}" type="button">${esc(o)}</button>`).join('')}
+      <button class="chip" data-opt="custom" type="button">✏️ Write my own…</button></div>
+    <div id="customWrap" class="hidden">
+      <label for="customMsg">Your message</label>
+      <input id="customMsg" maxlength="100" placeholder="Max 100 characters">
+    </div>
+    <button class="btn" id="sendRem" type="button">Send reminder 🤍</button>
+    <button class="btn ghost" id="cancelRem" type="button">Cancel</button>
+  </div></div>`;
+  const close = () => host.innerHTML = '';
+  $('ov').onclick = e => { if (e.target.id === 'ov') close(); };
+  $('cancelRem').onclick = close;
+  $('opts').onclick = e => {
+    const b = e.target.closest('[data-opt]'); if (!b) return;
+    document.querySelectorAll('#opts .chip').forEach(c => c.classList.toggle('on', c === b));
+    const custom = b.dataset.opt === 'custom';
+    $('customWrap').classList.toggle('hidden', !custom);
+    if (custom) { chosen = null; $('customMsg').focus(); } else chosen = options[+b.dataset.opt];
+  };
+  $('sendRem').onclick = async () => {
+    const text = (chosen ?? $('customMsg').value).trim();
+    if (!text) return toast('Please write a short message.');
+    $('sendRem').disabled = true;
+    try {
+      const { data: rid, error } = await sb.rpc('send_reminder', { p_prayer: prayer, p_message: text });
+      if (error) throw error;
+      close(); toast('Reminder sent 🤍');
+      if (rid) sb.functions.invoke('send-push', { body: { reminder_id: rid } }).catch(() => {});
+      S.sentReminders.push({ prayer, day: partnerDays().today, created_at: new Date().toISOString() });
+      renderHome();
+    } catch(err){
+      $('sendRem').disabled = false; toast(friendly(err));
+      if (/cooldown|already_ticked/.test(err.message || '')) { close(); refresh(); }
+    }
+  };
+}
+
+/* ============ SETTINGS ============ */
+let tzFilled = false;
+function fillTz(){
+  if (tzFilled) return;
+  let zones = [];
+  try { zones = Intl.supportedValuesOf('timeZone'); } catch(e){ zones = ['UTC','Asia/Dubai','Asia/Jakarta','Asia/Makassar','Asia/Jayapura']; }
+  if (!zones.includes('UTC')) zones.unshift('UTC');
+  $('sTz').innerHTML = zones.map(z => `<option value="${esc(z)}">${esc(z.replace(/_/g,' '))}</option>`).join('');
+  tzFilled = true;
+}
+function renderSettings(){
+  fillTz();
+  if (document.activeElement !== $('sName')) $('sName').value = S.me.name;
+  if (![...$('sTz').options].some(o => o.value === S.me.timezone)){
+    $('sTz').insertAdjacentHTML('afterbegin', `<option value="${esc(S.me.timezone)}">${esc(S.me.timezone)}</option>`);
+  }
+  $('sTz').value = S.me.timezone;
+  $('sEmail').textContent = 'Logged in as ' + (S.session.user.email || '');
+  $('partnerCard').classList.toggle('hidden', !S.partner);
+  if (S.partner){
+    $('spName').textContent = S.partner.name;
+    $('spSince').textContent = S.pair.connected_at
+      ? new Date(S.pair.connected_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : '';
+  }
+  applyTheme(getTheme());
+  updateNotifUI();
+}
+function openSettings(){ msg('settingsMsg',''); renderSettings(); show('settings'); }
+$('settingsBtn').onclick = openSettings;
+$('backBtn').onclick = () => { S.screen = null; route(); };
+$('useDeviceTz').onclick = () => {
+  const tz = deviceTz();
+  if (![...$('sTz').options].some(o => o.value === tz)) $('sTz').insertAdjacentHTML('afterbegin', `<option value="${esc(tz)}">${esc(tz)}</option>`);
+  $('sTz').value = tz; toast('Tap Save to keep it.');
+};
+$('saveProfileBtn').onclick = async () => {
+  $('saveProfileBtn').disabled = true;
+  try {
+    const { error } = await sb.rpc('update_profile', { p_name: $('sName').value.trim(), p_timezone: $('sTz').value });
+    if (error) throw error;
+    await loadAll(); renderSettings(); toast('Saved 🤍');
+  } catch(err){ msg('settingsMsg', friendly(err), true); }
+  $('saveProfileBtn').disabled = false;
+};
+$('themeSeg').onclick = e => {
+  const b = e.target.closest('[data-theme]'); if (!b) return;
+  try { localStorage.setItem('theme', b.dataset.theme); } catch(err){}
+  applyTheme(b.dataset.theme);
+};
+$('unpairBtn').onclick = async () => {
+  if (!confirm(`Unpair from ${S.partner.name}? You'll both keep your own history, but you'll need a new code to connect again.`)) return;
+  try {
+    const { error } = await sb.rpc('unpair'); if (error) throw error;
+    toast('Unpaired'); S.screen = null; await refresh();
+  } catch(err){ msg('settingsMsg', friendly(err), true); }
+};
+$('logoutBtn').onclick = async () => { await disableNotifs(true); await sb.auth.signOut(); };
+$('deleteBtn').onclick = async () => {
+  if (!confirm('Delete your account and all your prayer history? This cannot be undone.')) return;
+  if (!confirm('Are you sure? This is permanent.')) return;
+  try {
+    const { error } = await sb.rpc('delete_account'); if (error) throw error;
+    await sb.auth.signOut(); toast('Your account was deleted.');
+  } catch(err){ msg('settingsMsg', friendly(err), true); }
+};
+
+/* ============ CLOCK (partner time, cooldowns, new day) ============ */
+let lastMyDay = null;
+function tick(){
+  if (!S.session || !S.me) return;
+  const d = myDays().today;
+  if (lastMyDay && d !== lastMyDay) { lastMyDay = d; refresh(); return; }
+  lastMyDay = d;
+  if (S.screen === 'home' && !document.querySelector('.overlay')) renderHome();
+}
+
+/* ============ PHONE NOTIFICATIONS ============ */
+const VAPID_PUBLIC = 'BDBDh8tmkHOsSLQf7GXcWx25K3ndgt4uEymLQZbEG_hdHc-KExdpHA8cSKUuGLFgotmYxD7V-dS3_HRXP_6Pz-Y';
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+let swReg = null;
+async function getReg(){
+  if (swReg) return swReg;
+  if (!('serviceWorker' in navigator)) return null;
+  try { await navigator.serviceWorker.register('sw.js'); swReg = await navigator.serviceWorker.ready; return swReg; }
+  catch(e){ console.error(e); return null; }
+}
+function b64ToBytes(s){
+  const p = (s + '==='.slice((s.length + 3) % 4)).replace(/-/g,'+').replace(/_/g,'/');
+  const bin = atob(p); const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function currentSub(){
+  const r = await getReg(); if (!r || !r.pushManager) return null;
+  try { return await r.pushManager.getSubscription(); } catch(e){ return null; }
+}
+async function saveSub(sub){
+  const j = sub.toJSON();
+  const { error } = await sb.rpc('save_push_subscription', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+  if (error) throw error;
+}
+async function notifState(){
+  if (!pushSupported()) return (isIOS && !isStandalone()) ? 'ios-home' : 'unsupported';
+  if (Notification.permission === 'denied') return 'blocked';
+  if (Notification.permission !== 'granted') return 'off';
+  return (await currentSub()) ? 'on' : 'off';
+}
+async function enableNotifs(){
+  try {
+    const perm = await Notification.requestPermission();   // must be the first thing after the tap
+    if (perm !== 'granted'){ await updateNotifUI(); return; }
+    const reg = await getReg();
+    if (!reg) throw new Error('no_service_worker');
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID_PUBLIC) });
+    await saveSub(sub);
+    toast('Notifications are on 🤍');
+  } catch(err){ toast(friendly(err)); }
+  await updateNotifUI();
+}
+async function disableNotifs(quiet){
+  try {
+    const sub = pushSupported() ? await currentSub() : null;
+    if (sub){
+      try { await sb.rpc('delete_push_subscription', { p_endpoint: sub.endpoint }); } catch(e){}
+      await sub.unsubscribe();
+    }
+    if (!quiet) toast('Notifications turned off on this phone');
+  } catch(e){ if (!quiet) toast(friendly(e)); }
+  if (!quiet) await updateNotifUI();
+}
+async function pushSync(){
+  try {
+    if (pushSupported() && Notification.permission === 'granted'){
+      const sub = await currentSub(); if (sub) await saveSub(sub);
+    }
+  } catch(e){}
+  await updateNotifUI();
+}
+function nudgeDismissed(){ try { return localStorage.getItem('nudgeLater') === '1'; } catch(e){ return false; } }
+async function updateNotifUI(){
+  const st = await notifState();
+  const pName = S.partner ? firstName(S.partner.name) : 'your partner';
+  const text = {
+    'ios-home': 'On iPhone, notifications only work from the Home Screen app. In Safari tap Share → "Add to Home Screen", then open Salah Together from your Home Screen and come back here.',
+    'unsupported': "This browser can't show notifications. On iPhone use Safari (from the Home Screen). On Android use Chrome.",
+    'blocked': 'Notifications are blocked for this app. On iPhone: Settings → Notifications → Salah Together → Allow Notifications. Then come back here.',
+    'off': `Get a notification on your lock screen when ${pName} reminds you, even when the app is closed.`,
+    'on': 'Notifications are on for this phone ✅',
+  }[st];
+  $('notifText').textContent = text;
+  $('notifOnBtn').classList.toggle('hidden', st !== 'off');
+  $('notifTestBtn').classList.toggle('hidden', st !== 'on');
+  $('notifOffBtn').classList.toggle('hidden', st !== 'on');
+  const nudge = (st === 'off' || st === 'ios-home') && !nudgeDismissed() && !!S.partner;
+  $('notifNudge').classList.toggle('hidden', !nudge);
+  $('nudgeText').textContent = st === 'ios-home'
+    ? 'First add this app to your Home Screen: tap Share → "Add to Home Screen". Then open it from there.'
+    : `So you see it when ${pName} reminds you, even when the app is closed.`;
+  $('nudgeBtn').textContent = st === 'ios-home' ? 'Show me how' : 'Turn on notifications';
+  $('nudgeBtn').dataset.state = st;
+}
+$('notifOnBtn').onclick = enableNotifs;
+$('notifOffBtn').onclick = () => disableNotifs(false);
+$('notifTestBtn').onclick = async () => {
+  $('notifTestBtn').disabled = true;
+  try {
+    const { data, error } = await sb.functions.invoke('send-push', { body: { test: true } });
+    if (error) throw error;
+    if (data && data.sent > 0) toast('Test sent 🤍 Lock your phone, it should appear in a few seconds.', 4500);
+    else toast("The test couldn't reach this phone. Try turning notifications off and on again.", 4500);
+  } catch(err){ toast(friendly(err)); }
+  $('notifTestBtn').disabled = false;
+};
+$('nudgeBtn').onclick = () => { if ($('nudgeBtn').dataset.state === 'off') enableNotifs(); else openSettings(); };
+$('nudgeLater').onclick = () => { try { localStorage.setItem('nudgeLater','1'); } catch(e){} $('notifNudge').classList.add('hidden'); };
+
+/* ============ START ============ */
+async function boot(){
+  const { data } = await sb.auth.getSession();
+  S.session = data.session;
+  if (!S.session){ if (S.screen !== 'recover') { setAuthMode(false); show('auth'); } return; }
+  try {
+    const { data: cd } = await sb.rpc('reminder_cooldown');
+    const ms = parseInterval(cd); if (ms) S.cooldownMs = ms;
+  } catch(e){}
+  S.screen = (S.screen === 'settings' || S.screen === 'recover') ? S.screen : null;
+  await refresh();
+  subscribe();
+  pushSync();
+  clearInterval(S.clockTimer); S.clockTimer = setInterval(tick, 30000);
+}
+
+function start(){
+  if (!window.supabase || !window.supabase.createClient){
+    $('loading').innerHTML = '<div class="card center" style="margin-top:60px">Something went wrong loading the app. Please check your internet and reload.</div>';
+    return;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  getReg();
+  let booted = false;
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY'){ S.session = session; show('recover'); return; }
+    if (event === 'SIGNED_OUT'){
+      S.session = null; S.me = S.partner = S.pair = null;
+      if (S.channel) { sb.removeChannel(S.channel); S.channel = null; }
+      clearInterval(S.clockTimer); setAuthMode(false); show('auth'); return;
+    }
+    if (event === 'SIGNED_IN' && booted && (!S.session || S.session.user.id !== session.user.id)){
+      S.session = session; setTimeout(boot, 0);
+    }
+    if (event === 'TOKEN_REFRESHED') S.session = session;
+  });
+  boot().then(() => { booted = true; }).catch(err => { booted = true; toast(friendly(err)); show('auth'); });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && S.session && S.screen !== 'recover') refresh();
+  });
+  window.addEventListener('online', () => { if (S.session) refresh(); });
+}
+start();
+</script>
+</body>
+</html>
